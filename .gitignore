@@ -1,0 +1,52 @@
+# ============== #
+# Standard Repos #
+# ============== #
+unityutilities/
+
+# ============================ #
+# Shared Library Functionality #
+# ============================ #
+*.meta
+
+# =============== #
+# Unity generated #
+# =============== #
+[Tt]emp/
+[Oo]bj/
+[Bb]uild
+[Ll]ibrary/
+test_Data/
+sysinfo.txt
+*_Data
+ 
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+[Ee]xported[Oo]bj/
+/*.userprefs
+/*.csproj
+/*.pidb
+/*.suo
+/*.sln*
+/*.user
+/*.unityproj
+/*.booproj
+/*.pdb
+/*.exe
+ 
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+[Tt]humbs.db
+
+# --------------
+# Stupid Files
+# --------------
+
+*.zip
