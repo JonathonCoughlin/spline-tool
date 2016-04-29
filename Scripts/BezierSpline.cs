@@ -51,6 +51,11 @@ public class BezierSpline : MonoBehaviour {
         return modes[(index + 1) / 3];
     }
 
+    public int GetAnchorIdxOfPoint(int index)
+    {
+        return (index + 1) / 3;
+    }
+
     public List<Vector3> GetFullSplineList(int splineResolution, bool pointsInWorldSpace)
     {
         List<Vector3> fullResolutionSpline = new List<Vector3>();
@@ -148,6 +153,21 @@ public class BezierSpline : MonoBehaviour {
     public Vector3 GetControlPoint (int index)
     {
         return m_points[index];
+    }
+
+    public List<Vector3> GetControlPointList(bool pointsInWorldSpace)
+    {
+        List<Vector3> controlPoints = new List<Vector3>();
+        foreach (Vector3 point in m_points)
+        {
+            Vector3 sendPoint = point;
+            if (pointsInWorldSpace)
+            {
+                sendPoint = transform.TransformPoint(sendPoint);
+            }
+            controlPoints.Add(sendPoint);
+        }
+        return controlPoints;
     }
 
     public void SetControlPoint (int index, Vector3 point)
@@ -316,7 +336,14 @@ public class BezierSpline : MonoBehaviour {
         }
     }
 
-    public void RemoveAnchor(int anchorIdx)
+    public void RemovePoint(int pointIdx)
+    {
+        //!!This code seems to be removeing the points farther than it's supposed to...
+        int anchorIdx = GetAnchorIdxOfPoint(pointIdx);
+        RemoveAnchor(anchorIdx);
+    }
+
+    private void RemoveAnchor(int anchorIdx)
     {
         int[] badPoints;
         if (anchorIdx == 0)
@@ -330,7 +357,7 @@ public class BezierSpline : MonoBehaviour {
         else
         {
             int anchorPointIdx = anchorIdx * 3;
-            badPoints = new int[] { anchorIdx - 1, anchorIdx, anchorIdx + 1};
+            badPoints = new int[] { anchorPointIdx - 1, anchorPointIdx, anchorPointIdx + 1};
         }
         RemovePoints(badPoints);
         RemoveMode(anchorIdx);
