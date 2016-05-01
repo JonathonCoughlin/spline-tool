@@ -479,6 +479,13 @@ public class BezierSpline : MonoBehaviour {
 
 #region Helper Functions
 
+public enum BezierControlPointMode
+{
+    Free,
+    Aligned,
+    Mirrored
+}
+
 public static class BezHelper
 {
     public static Vector3 GetBezPoint(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
