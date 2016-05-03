@@ -16,7 +16,7 @@ using System.Collections.Generic;
 //  -Start contributing to EVERYONE'S repos!!!!!
 
 [CustomEditor(typeof(BezierSpline))]
-
+[System.Serializable]
 public class BezierSplineEditor : Editor
 {
 
@@ -28,10 +28,11 @@ public class BezierSplineEditor : Editor
     private const int stepsPerCurve = 10;
 
     //Adding Points
+    // !!Store these in editorprefs, set them at OnEnable to make them reusable
     [SerializeField]
-    private int mousePixelRange = 10;
+    private static int mousePixelRange = 10;
     [SerializeField]
-    private int mouseSplineResolution = 300;
+    private static int mouseSplineResolution = 300;
 
     //handle look/feel
     private const float dotCapSize = 0.04f;
