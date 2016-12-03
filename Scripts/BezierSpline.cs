@@ -296,6 +296,15 @@ public class BezierSpline : MonoBehaviour {
         return indices;
     }
 
+    public int CurveIDatPercentage(float splinePercentage)
+    {
+        int curveID = 0;
+        int[] boundaryIndices = BoundaryIndicesAtPercentage(splinePercentage);
+        curveID = boundaryIndices[0]/3; // accounts for control points :(
+
+        return curveID;
+    }
+
     private void ShiftCurvesRight(int firstPointIdx)
     {
         for (int ii = m_points.Length-1; ii >= (firstPointIdx + 3); ii-=1)
