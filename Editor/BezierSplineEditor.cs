@@ -116,6 +116,8 @@ public class BezierSplineEditor : Editor
 
     #endregion
 
+  
+
     private void OnSceneGUI()
     {
         mySpline = target as BezierSpline;

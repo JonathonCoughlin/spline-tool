@@ -301,7 +301,8 @@ public class BezierSpline : MonoBehaviour {
         int curveID = 0;
         int[] boundaryIndices = BoundaryIndicesAtPercentage(splinePercentage);
         curveID = boundaryIndices[0]/3; // accounts for control points :(
-
+        //Don't let curveID jump above total curves
+        curveID = Mathf.Min(curveID, CurveCount - 1);
         return curveID;
     }
 
