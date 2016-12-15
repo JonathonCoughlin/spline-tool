@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using System;
@@ -14,6 +15,8 @@ public class BezierSpline : MonoBehaviour {
 
     [SerializeField]
     private bool amLoop;
+
+    public bool showMe;
 
     public bool Loop
     {
@@ -484,6 +487,7 @@ public class BezierSpline : MonoBehaviour {
         return GetVelocity(t,true).normalized;
     }
 
+    
 
 }
 

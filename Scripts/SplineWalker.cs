@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,13 +7,14 @@ using System.Collections.Generic;
 public enum WalkerSpeedType { PercentPerSecond, TimeInterval };
 public enum WalkerRotationType { Angle, Target };
 
+[Serializable]
 public class WalkerSplinePoint
 {
-    public float m_speedPerSegment { get; internal set; }
-    public bool m_newRotationTarget { get; internal set; }
-    public GameObject m_rotationTarget { get; internal set; }
-    public float m_pauseTimeReq { get; internal set; }
-    public bool m_pauseAtCurve { get; internal set; }
+    public float m_speedPerSegment;
+    public bool m_newRotationTarget;
+    public GameObject m_rotationTarget; 
+    public float m_pauseTimeReq;
+    public bool m_pauseAtCurve;
 
     public WalkerSplinePoint(float spd, bool newTgt, GameObject tgt, bool pause, float pauseTime)
     {
@@ -62,17 +64,43 @@ public class SplineWalker : MonoBehaviour {
     public WalkerRotationType m_rotationType;
     public float m_yAngleOffset = 0f;
 
+    //Duplication
+    public int m_duplicationIdx = 0;
+
     // Use this for initialization
     void Start () {
         ResetSpline();
+        UpdatePoints();
+	}
 
-        for (int ii = 0; ii < segmentSpeedValue.Count; ii++ )
+    public void UpdatePoints()
+    {
+        m_WalkerSplinePoints = new List<WalkerSplinePoint>();
+        for (int ii = 0; ii < segmentSpeedValue.Count; ii++)
         {
             m_WalkerSplinePoints.Add(new WalkerSplinePoint(segmentSpeedValue[ii], useLookTarget[ii], currentTarget[ii], pauseAtCurveStart[ii], pauseTime[ii]));
             m_size = ii + 1;
         }
+    }
 
-	}
+    public void DuplicatePoint(int originalPoint, int pointToAdjust)
+    {
+        //check point boundaries
+        int lastCurve = m_Spline.CurveCount - 1;
+        pointToAdjust = pointToAdjust > lastCurve ? 0 : pointToAdjust;
+        pointToAdjust = pointToAdjust < 0 ? lastCurve : pointToAdjust;
+        //Modify point
+        m_WalkerSplinePoints[pointToAdjust] = m_WalkerSplinePoints[originalPoint];
+         
+    }
+
+    public void DuplicateAllPoints(int originalPoint)
+    {
+        for (int ii = 0; ii < m_Spline.CurveCount; ii++)
+        {
+            DuplicatePoint(originalPoint, ii);
+        }
+    }
 
     //Adjust Walker Parameters
     public void SizeWalker(int numberOfCurves)
@@ -83,11 +111,12 @@ public class SplineWalker : MonoBehaviour {
         pauseTime.Resize(numberOfCurves);
         m_size = numberOfCurves;
         //special code for stupid game objects
-        GameObject lookTgt = currentTarget[currentTarget.Count - 1];
-        if (lookTgt == null)
-        {
-            lookTgt = new GameObject("DummySplineLookTarget");
-        }
+        GameObject lookTgt;
+        bool badExistingTgt = currentTarget.Count < 1;
+        if (badExistingTgt) { lookTgt = new GameObject("DummySplineLookTarget");  }
+        else if (currentTarget[currentTarget.Count - 1] == null) { lookTgt = new GameObject("DummySplineLookTarget"); }
+        else { lookTgt = currentTarget[currentTarget.Count - 1]; }
+        
         currentTarget.Resize(numberOfCurves, lookTgt);
 
     }
@@ -271,6 +300,71 @@ public class SplineWalker : MonoBehaviour {
         }
     }
 
+    //Helpers
+    public float TotalTime()
+    {
+        float totalTime = 0f;
+        totalTime = m_variableSpeed ? sumVariableSpeedTime() : sumConstantSpeedTime();
+        return totalTime;
+    }
+
+    private float sumConstantSpeedTime()
+    {
+        float constantSpeedTime = 0f;
+        switch (m_speedType)
+        {
+            case WalkerSpeedType.PercentPerSecond:
+                {
+                    constantSpeedTime = 100f / m_walkSpeed;
+                    break;
+                }
+            case WalkerSpeedType.TimeInterval:
+                {
+                    constantSpeedTime = m_walkSpeed;
+                    break;
+                }
+        }
+        return constantSpeedTime;
+    }
+
+    private float sumVariableSpeedTime()
+    {
+        float variableSpeedTime = 0f;
+        switch (m_speedType)
+        {
+            case WalkerSpeedType.PercentPerSecond:
+                {
+                    foreach(WalkerSplinePoint point in m_WalkerSplinePoints)
+                    {
+                        variableSpeedTime += (100f / m_Spline.CurveCount) / point.m_speedPerSegment;
+                    }
+                    break;
+                }
+            case WalkerSpeedType.TimeInterval:
+                {
+                    foreach (WalkerSplinePoint point in m_WalkerSplinePoints)
+                    {
+                        variableSpeedTime += point.m_speedPerSegment;
+                    }
+                    break;
+                }
+        }
+        variableSpeedTime += sumPauseTime();
+        return variableSpeedTime;
+    }
+
+    private float sumPauseTime()
+    {
+        float pauseTimeTotal = 0f;
+        foreach(WalkerSplinePoint point in m_WalkerSplinePoints)
+        {
+            if (point.m_pauseAtCurve)
+            {
+                pauseTimeTotal += point.m_pauseTimeReq;
+            }
+        }
+        return pauseTimeTotal;
+    }
 }
 
 
