@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 
 public enum WalkerSpeedType { PercentPerSecond, TimeInterval };
-public enum WalkerRotationType { Angle, Target };
+public enum WalkerRotationType { Angle, Velocity, Target };
 
 [Serializable]
 public class WalkerSplinePoint
@@ -27,6 +27,7 @@ public class WalkerSplinePoint
 
 }
 
+[ExecuteInEditMode]
 public class SplineWalker : MonoBehaviour {
 
     public BezierSpline m_Spline;
@@ -34,7 +35,7 @@ public class SplineWalker : MonoBehaviour {
     public int m_size { get; private set; }
 
     //Walking states
-    private bool m_walking;
+    public bool m_walking { get; private set; }
     private bool m_paused = false;
     private float m_splinePos;
 
@@ -63,6 +64,7 @@ public class SplineWalker : MonoBehaviour {
     //CustomRotation
     public WalkerRotationType m_rotationType;
     public float m_yAngleOffset = 0f;
+    public GameObject m_lookTarget;
 
     //Duplication
     public int m_duplicationIdx = 0;
@@ -123,21 +125,47 @@ public class SplineWalker : MonoBehaviour {
 
     // Update is called once per frame
     void FixedUpdate () {
-        
-        if (!m_walking)
+
+        if (Application.isPlaying)
         {
-            if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
-        } else if (!m_paused)
-        {
-            ManageWalk();
-        } else
-        {
-            ManagePause();
+            if (!m_walking)
+            {
+                if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
+            }
+            else if (!m_paused)
+            {
+                ManageWalk(Time.fixedDeltaTime);
+            }
+            else
+            {
+                ManagePause();
+            }
+            ManageReset();
         }
-        ManageReset();
 	}
 
-    private void ManageWalk()
+    void Update()
+    {
+        if (Application.isEditor)
+        {
+            if (!m_walking)
+            {
+                //if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
+            }
+            else if (!m_paused)
+            {
+                ManageWalk(Time.deltaTime);
+            }
+            else
+            {
+                ManagePause();
+            }
+            ManageReset();
+        }
+    }
+
+
+    private void ManageWalk(float timestep)
     {
         // check if on new curve
         int currentCurve = m_Spline.CurveIDatPercentage(m_splinePos);
@@ -154,11 +182,11 @@ public class SplineWalker : MonoBehaviour {
         {
             if (m_variableSpeed)
             {
-                WalkSplineAtVariableSpeed(Time.fixedDeltaTime);
+                WalkSplineAtVariableSpeed(timestep);
             }
             else
             {
-                WalkSpline(Time.fixedDeltaTime);
+                WalkSpline(timestep);
             }
         } 
         else
@@ -166,7 +194,7 @@ public class SplineWalker : MonoBehaviour {
             // increment scheduled pause counter
             if (m_scheduledPauseClock < m_scheduledPauseLimit)
             {
-                m_scheduledPauseClock += Time.fixedDeltaTime;
+                m_scheduledPauseClock += timestep;
             } 
             else
             {
@@ -227,7 +255,7 @@ public class SplineWalker : MonoBehaviour {
         {
             case WalkerSpeedType.PercentPerSecond:
                 {
-                    currentSpeed = m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment;
+                    currentSpeed = m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment / 100f;
                     break;
                 }
             case WalkerSpeedType.TimeInterval:
@@ -241,18 +269,9 @@ public class SplineWalker : MonoBehaviour {
 
         if (m_splinePos < 1.0f)
         {
-            m_splinePos += deltaTime * currentSpeed / 100f;
+            m_splinePos += deltaTime * currentSpeed;
             this.transform.position = m_Spline.GetPoint(m_splinePos, true);
-
-            if (m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget)
-            {
-                transform.LookAt(m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.transform);
-                //Debug.Log("CurveIndex: " + currentCurveIndex);
-                //Debug.Log("Spline Pct: " + m_splinePos);
-                //Debug.Log("PctPerSec: " + m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment);
-                //Debug.Log("New Tgt: " + m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget);
-                //Debug.Log("TargetName:" + m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.name);
-            }
+            ManageWalkerAngle(currentCurveIndex);
         }
         else
         {
@@ -270,22 +289,26 @@ public class SplineWalker : MonoBehaviour {
 
     private void WalkSpline(float deltaTime)
     {
+        float currentSpeed = 0f;
+        switch (m_speedType)
+        {
+            case WalkerSpeedType.PercentPerSecond:
+                {
+                    currentSpeed = m_walkSpeed / 100f;
+                    break;
+                }
+            case WalkerSpeedType.TimeInterval:
+                {
+                    currentSpeed = 100f / m_walkSpeed;
+                    break;
+                }
+        }
+
         if (m_splinePos < 1.0f)
         {
-            m_splinePos += deltaTime * m_walkSpeed / 100f;
+            m_splinePos += deltaTime * currentSpeed;
             this.transform.position = m_Spline.GetPoint(m_splinePos, true);
-
-            if (m_rotationType == WalkerRotationType.Angle)
-            {
-                //get current euler angles
-                Vector3 oldEuler = this.transform.rotation.eulerAngles;
-                //calculate y rotation
-                Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
-                float newYangle = m_yAngleOffset + -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
-                //combine angles
-                Vector3 newEuler = new Vector3(oldEuler.x, newYangle, oldEuler.z);
-                this.transform.eulerAngles = newEuler;
-            }
+            ManageWalkerAngle(0);
         } else
         {
             if (m_destroyAtEnd)
@@ -298,6 +321,58 @@ public class SplineWalker : MonoBehaviour {
                 StartWalking();
             }
         }
+    }
+
+    private void ManageWalkerAngle(int currentCurveIndex)
+    {
+        switch (m_rotationType)
+        {
+            case WalkerRotationType.Velocity:
+                {
+                    //get current euler angles
+                    Vector3 oldEuler = this.transform.rotation.eulerAngles;
+                    //calculate y rotation
+                    Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
+                    float newYangle = -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
+                    //combine angles
+                    Vector3 newEuler = new Vector3(oldEuler.x, newYangle, oldEuler.z);
+                    this.transform.eulerAngles = newEuler;
+                    break;
+                }
+            case WalkerRotationType.Angle:
+                {
+                    //get current euler angles
+                    Vector3 oldEuler = this.transform.rotation.eulerAngles;
+                    //calculate y rotation
+                    Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
+                    float newYangle = m_yAngleOffset + -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
+                    //combine angles
+                    Vector3 newEuler = new Vector3(oldEuler.x, newYangle, oldEuler.z);
+                    this.transform.eulerAngles = newEuler;
+                    break;
+                }
+            case WalkerRotationType.Target:
+                {
+                    if (m_variableSpeed)
+                    {
+                        if (m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget)
+                        {
+                            transform.LookAt(m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.transform);
+                            //Debug.Log("CurveIndex: " + currentCurveIndex);
+                            //Debug.Log("Spline Pct: " + m_splinePos);
+                            //Debug.Log("PctPerSec: " + m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment);
+                            //Debug.Log("New Tgt: " + m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget);
+                            //Debug.Log("TargetName:" + m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.name);
+                        }
+                    } else
+                    {
+
+                    }
+                    break;
+                }
+        }
+
+
     }
 
     //Helpers
