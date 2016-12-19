@@ -25,9 +25,13 @@ public class WalkerSplinePoint
         m_pauseTimeReq = pauseTime;
     }
 
+    public WalkerSplinePoint()
+    {
+
+    }
+
 }
 
-[ExecuteInEditMode]
 public class SplineWalker : MonoBehaviour {
 
     public BezierSpline m_Spline;
@@ -72,8 +76,36 @@ public class SplineWalker : MonoBehaviour {
     // Use this for initialization
     void Start () {
         ResetSpline();
-        UpdatePoints();
+        
 	}
+
+    public void SetSpline(BezierSpline spline, SimpleSplineParameters parameters)
+    {
+        AlignToNewSpline(spline);
+
+        m_speedType = parameters.m_speedType;
+        m_walkSpeed = parameters.m_walkSpeed;
+        m_rotationType = parameters.m_rotationType;
+        m_lookTarget = parameters.m_lookTarget;
+        m_yAngleOffset = parameters.m_offsetAngle;
+        m_autoWalk = parameters.m_autoWalk;
+        m_autoReset = parameters.m_autoReset;
+        m_destroyAtEnd = parameters.m_destroyAtEnd;
+
+        ResetSpline();
+    }
+
+    public void AlignToNewSpline(BezierSpline spline)
+    {
+        //make walker spline points good
+        m_Spline = spline;
+        m_size = m_Spline.CurveCount;
+        m_WalkerSplinePoints = new List<WalkerSplinePoint>();
+        for (int ii = 0; ii < m_size; ii++)
+        {
+            m_WalkerSplinePoints.Add(new WalkerSplinePoint());
+        }
+    }
 
     public void UpdatePoints()
     {
@@ -126,42 +158,26 @@ public class SplineWalker : MonoBehaviour {
     // Update is called once per frame
     void FixedUpdate () {
 
-        if (Application.isPlaying)
+        
+        if (!m_walking)
         {
-            if (!m_walking)
-            {
-                if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
-            }
-            else if (!m_paused)
-            {
-                ManageWalk(Time.fixedDeltaTime);
-            }
-            else
-            {
-                ManagePause();
-            }
-            ManageReset();
+            if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
         }
+        else if (!m_paused)
+        {
+            ManageWalk(Time.fixedDeltaTime);
+        }
+        else
+        {
+            ManagePause();
+        }
+        ManageReset();
+        
 	}
 
     void Update()
     {
-        if (Application.isEditor)
-        {
-            if (!m_walking)
-            {
-                //if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
-            }
-            else if (!m_paused)
-            {
-                ManageWalk(Time.deltaTime);
-            }
-            else
-            {
-                ManagePause();
-            }
-            ManageReset();
-        }
+        
     }
 
 
@@ -299,7 +315,7 @@ public class SplineWalker : MonoBehaviour {
                 }
             case WalkerSpeedType.TimeInterval:
                 {
-                    currentSpeed = 100f / m_walkSpeed;
+                    currentSpeed = 1f / m_walkSpeed;
                     break;
                 }
         }
