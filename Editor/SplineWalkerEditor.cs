@@ -10,44 +10,55 @@ public class SplineWalkerEditor : Editor {
     private SplineWalker m_Walker;
 
     private SplineRenderer m_Renderer;
-
+    private string testString;
     private int currentCurve = 0;
 
     void OnEnable()
     {
         m_Walker = target as SplineWalker;
-        m_Renderer = new SplineRenderer(m_Walker.m_Spline);
-        m_Renderer.DrawAndEdit();
+        if (!(m_Walker.m_Spline == null))
+        {
+            m_Renderer = new SplineRenderer(m_Walker.m_Spline);
+        }
+        ShowHostSpline();
     }
 
     private void OnSceneGUI()
     {
-        m_Renderer.DrawAndEdit();
-        SceneView.RepaintAll();
+        
+            ShowHostSpline();
+        
+    }
+
+    private void ShowHostSpline()
+    {
+        if (!(m_Walker.m_Spline == null))
+        {
+            m_Renderer.DrawAndEdit();
+            SceneView.RepaintAll();
+        }
     }
 
     public override void OnInspectorGUI()
     {
-        
-        m_Walker = target as SplineWalker;
+
+        serializedObject.Update();
+        //m_Walker = target as SplineWalker;
 
         // Make some controls
-        serializedObject.Update();
+        
+        
+        m_Walker.m_Spline = (BezierSpline)EditorGUILayout.ObjectField(m_Walker.m_Spline, typeof(BezierSpline),true);
 
-        if (m_Walker.m_Spline == null)
+        if (!(m_Walker.m_Spline == null))
         {
-            EditorGUILayout.ObjectField("Spline: ", m_Walker.m_Spline, typeof(BezierSpline));
-        }
-        else
-        {
+
             int splineCurves = m_Walker.m_Spline.CurveCount;
             if (m_Walker.m_size != splineCurves)
             {
                 m_Walker.SizeWalker(splineCurves);
                 m_Walker.UpdatePoints();
             }
-            
-            EditorGUILayout.ObjectField("Spline: ", m_Walker.m_Spline, typeof(BezierSpline));
 
             ////SplineWalkerTester
             //labelStyle.alignment = TextAnchor.UpperCenter;
@@ -128,7 +139,7 @@ public class SplineWalkerEditor : Editor {
                         }
                     case WalkerRotationType.Target:
                         {
-                            EditorGUILayout.ObjectField(m_Walker.m_lookTarget, (typeof(GameObject)));
+                            m_Walker.m_lookTarget = (GameObject)EditorGUILayout.ObjectField(m_Walker.m_lookTarget, (typeof(GameObject)), true);
                             break;
                         }
                 }

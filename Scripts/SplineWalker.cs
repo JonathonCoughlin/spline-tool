@@ -337,6 +337,7 @@ public class SplineWalker : MonoBehaviour {
                 StartWalking();
             }
         }
+        ManageWalkerAngle(0);
     }
 
     private void ManageWalkerAngle(int currentCurveIndex)
@@ -382,7 +383,7 @@ public class SplineWalker : MonoBehaviour {
                         }
                     } else
                     {
-
+                        transform.LookAt(m_lookTarget.transform);
                     }
                     break;
                 }
