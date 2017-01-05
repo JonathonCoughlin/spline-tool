@@ -54,11 +54,11 @@ public class SplineWalkerEditor : Editor {
         {
 
             int splineCurves = m_Walker.m_Spline.CurveCount;
-            if (m_Walker.m_size != splineCurves)
-            {
-                m_Walker.SizeWalker(splineCurves);
-                m_Walker.UpdatePoints();
-            }
+            //if (m_Walker.m_size != splineCurves)
+            //{
+            //    m_Walker.SizeWalker(splineCurves);
+            //    m_Walker.UpdatePoints();
+            //}
 
             ////SplineWalkerTester
             //labelStyle.alignment = TextAnchor.UpperCenter;

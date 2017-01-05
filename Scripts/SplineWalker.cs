@@ -53,13 +53,8 @@ public class SplineWalker : MonoBehaviour {
     public bool m_variableSpeed;
     public List<WalkerSplinePoint> m_WalkerSplinePoints = new List<WalkerSplinePoint>();
     public WalkerSpeedType m_speedType;
-    public List<float> segmentSpeedValue = new List<float>();
-    public List<bool> useLookTarget = new List<bool>();
-    public List<GameObject> currentTarget = new List<GameObject>();
-
+    
     //Scheduled Pause members
-    public List<bool> pauseAtCurveStart = new List<bool>();
-    public List<float> pauseTime = new List<float>();
     private int m_lastCurve = -1;
     private bool m_pausingOnSchedule = false;
     private float m_scheduledPauseClock = 0f;
@@ -107,16 +102,6 @@ public class SplineWalker : MonoBehaviour {
         }
     }
 
-    public void UpdatePoints()
-    {
-        m_WalkerSplinePoints = new List<WalkerSplinePoint>();
-        for (int ii = 0; ii < segmentSpeedValue.Count; ii++)
-        {
-            m_WalkerSplinePoints.Add(new WalkerSplinePoint(segmentSpeedValue[ii], useLookTarget[ii], currentTarget[ii], pauseAtCurveStart[ii], pauseTime[ii]));
-            m_size = ii + 1;
-        }
-    }
-
     public void DuplicatePoint(int originalPoint, int pointToAdjust)
     {
         //check point boundaries
@@ -136,24 +121,6 @@ public class SplineWalker : MonoBehaviour {
         }
     }
 
-    //Adjust Walker Parameters
-    public void SizeWalker(int numberOfCurves)
-    {
-        segmentSpeedValue.Resize(numberOfCurves);
-        useLookTarget.Resize(numberOfCurves);
-        pauseAtCurveStart.Resize(numberOfCurves);
-        pauseTime.Resize(numberOfCurves);
-        m_size = numberOfCurves;
-        //special code for stupid game objects
-        GameObject lookTgt;
-        bool badExistingTgt = currentTarget.Count < 1;
-        if (badExistingTgt) { lookTgt = new GameObject("DummySplineLookTarget");  }
-        else if (currentTarget[currentTarget.Count - 1] == null) { lookTgt = new GameObject("DummySplineLookTarget"); }
-        else { lookTgt = currentTarget[currentTarget.Count - 1]; }
-        
-        currentTarget.Resize(numberOfCurves, lookTgt);
-
-    }
 
     // Update is called once per frame
     void FixedUpdate () {
@@ -276,7 +243,7 @@ public class SplineWalker : MonoBehaviour {
                 }
             case WalkerSpeedType.TimeInterval:
                 {
-                    float segmentPercentage = 100f / (m_Spline.CurveCount);
+                    float segmentPercentage = 1f / (m_Spline.CurveCount);
                     currentSpeed = segmentPercentage / m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment;
                     break;
                 }

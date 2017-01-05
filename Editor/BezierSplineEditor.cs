@@ -62,7 +62,6 @@ public class BezierSplineEditor : Editor
     private bool inRangeOfSpline = false;
     private float mouseSplinePercentage;
     private bool inRangeOfControlPoint = false;
-    [SerializeField]
     private int selectedIndex = -1;
     private int nearestIndex = -1;
 
