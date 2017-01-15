@@ -11,54 +11,71 @@ public class SplineWalkerEditor : Editor {
 
     private SplineRenderer m_Renderer;
     private string testString;
+    [SerializeField]
     private int currentCurve = 0;
+
 
     void OnEnable()
     {
         m_Walker = target as SplineWalker;
-        if (!(m_Walker.m_Spline == null))
-        {
-            m_Renderer = new SplineRenderer(m_Walker.m_Spline);
-        }
-        ShowHostSpline();
+        
     }
 
+ 
     private void OnSceneGUI()
     {
-        
-            ShowHostSpline();
-        
+        ShowHostSpline();
     }
 
     private void ShowHostSpline()
     {
-        if (!(m_Walker.m_Spline == null))
+        if (CheckRenderer())
         {
-            m_Renderer.DrawAndEdit();
+            m_Renderer.HighlightCurve(currentCurve);
+            m_Renderer.DrawAndEdit(Event.current);
             SceneView.RepaintAll();
         }
+    }
+
+    private bool CheckRenderer()
+    {
+        bool rendererExists = false;
+
+        if (m_Renderer != null)
+        {
+            rendererExists = true;
+        } else if (m_Walker.m_Spline != null)
+        {
+            m_Renderer = (SplineRenderer)CreateInstance("SplineRenderer");
+            m_Renderer.SetSpline(m_Walker.m_Spline);
+            rendererExists = true;
+        }
+
+        return rendererExists;
     }
 
     public override void OnInspectorGUI()
     {
 
-        serializedObject.Update();
-        //m_Walker = target as SplineWalker;
+        m_Walker = target as SplineWalker;
 
-        // Make some controls
-        
+        serializedObject.Update();
         
         m_Walker.m_Spline = (BezierSpline)EditorGUILayout.ObjectField(m_Walker.m_Spline, typeof(BezierSpline),true);
 
         if (!(m_Walker.m_Spline == null))
         {
 
+            CheckRenderer();
+
             int splineCurves = m_Walker.m_Spline.CurveCount;
-            //if (m_Walker.m_size != splineCurves)
-            //{
-            //    m_Walker.SizeWalker(splineCurves);
-            //    m_Walker.UpdatePoints();
-            //}
+            if (m_Walker.m_WalkerSplinePoints.Count == 0)
+            {
+                m_Walker.AlignToNewSpline(m_Walker.m_Spline);
+            } else if (m_Walker.m_WalkerSplinePoints.Count != m_Walker.m_Spline.CurveCount)
+            {
+                m_Walker.ResizeToSpline();
+            }
 
             ////SplineWalkerTester
             //labelStyle.alignment = TextAnchor.UpperCenter;
@@ -116,9 +133,20 @@ public class SplineWalkerEditor : Editor {
 
             EditorGUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField("Rotation Type", GUILayout.Width(100f));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_rotationType"), GUIContent.none, GUILayout.Width(100f));
-
+            EditorGUILayout.LabelField("Rotation", GUILayout.Width(60f));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_rotationType"), GUIContent.none, GUILayout.Width(60f));
+            if (m_Walker.m_rotationType == WalkerRotationType.Angle || m_Walker.m_rotationType == WalkerRotationType.Velocity)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_rotationAxis"), GUIContent.none, GUILayout.Width(60f));
+                if (m_Walker.m_rotationType == WalkerRotationType.Angle)
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("m_angleOffset"), GUIContent.none, GUILayout.Width(60f));
+                }
+            } else if (m_Walker.m_rotationType == WalkerRotationType.Target && !m_Walker.m_variableSpeed)
+            {
+                m_Walker.m_lookTarget = (GameObject)EditorGUILayout.ObjectField(m_Walker.m_lookTarget, (typeof(GameObject)), true);
+            }
+            
             EditorGUILayout.EndHorizontal();
 
 
@@ -126,23 +154,6 @@ public class SplineWalkerEditor : Editor {
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("m_walkSpeed"));
-                switch (m_Walker.m_rotationType)
-                {
-                    case WalkerRotationType.Velocity:
-                        {
-                            break;
-                        }
-                    case WalkerRotationType.Angle:
-                        {
-                            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_yAngleOffset"));
-                            break;
-                        }
-                    case WalkerRotationType.Target:
-                        {
-                            m_Walker.m_lookTarget = (GameObject)EditorGUILayout.ObjectField(m_Walker.m_lookTarget, (typeof(GameObject)), true);
-                            break;
-                        }
-                }
                 EditorGUILayout.EndHorizontal();
             }
             else
@@ -198,8 +209,6 @@ public class SplineWalkerEditor : Editor {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("m_duplicationIdx"), GUIContent.none);
                 EditorGUILayout.EndHorizontal();
 
-                m_Renderer.HighlightCurve(currentCurve);
-
                 //All Points
                 ShowArrayProperty(serializedObject.FindProperty("m_WalkerSplinePoints"),
                     "Curve ");
@@ -246,6 +255,8 @@ public class WalkerSplinePointPropertyDrawer : PropertyDrawer
         speedPosition.height = rowHeight; // default label height
         EditorGUIUtility.labelWidth = speedPosition.width * labelWidthRatio;
         EditorGUI.PropertyField(speedPosition, property.FindPropertyRelative("m_speedPerSegment"), new GUIContent("Speed"));
+        
+        
         // Look at Target Options
         SerializedProperty tgtCheck = property.FindPropertyRelative("m_newRotationTarget");
         Rect tgtCheckPosition = contentPosition;

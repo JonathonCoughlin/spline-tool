@@ -7,8 +7,7 @@ using System.Collections.Generic;
 
 class SplineRenderer : Editor
 {
-
-
+    
     private BezierSpline mySpline;
     private Quaternion splineQuaternion;
 
@@ -36,6 +35,10 @@ class SplineRenderer : Editor
     public Color specialCurveColor = Color.red;
     private int highlightedCurve = 0;
 
+    //Event
+    [SerializeField]
+    private Event curEvent;
+
     private static Color[] modeColors =
     {
         Color.white,
@@ -62,12 +65,20 @@ class SplineRenderer : Editor
         mySpline = tgtSpline;
     }
 
-    public void DrawAndEdit()
+    public void SetSpline(BezierSpline tgtSpline)
+    {
+        mySpline = tgtSpline;
+    }
+
+    public void DrawAndEdit(Event sentEvent)
     {
 
         handleTransform = mySpline.transform;
         handleRotation = Tools.pivotRotation == PivotRotation.Local ?
             handleTransform.rotation : Quaternion.identity;
+
+        //Set Event
+        curEvent = sentEvent;
 
         DrawSpline();
 
@@ -90,7 +101,7 @@ class SplineRenderer : Editor
     private void ManageClicking()
     {
         int controlID = GUIUtility.GetControlID(hash, FocusType.Passive);
-        Event currentEvent = Event.current;
+        Event currentEvent = curEvent;
         bool mouseDown = currentEvent.GetTypeForControl(controlID) == EventType.MouseDown;
         bool mouseUp = currentEvent.GetTypeForControl(controlID) == EventType.MouseUp;
         bool mouseDrag = currentEvent.GetTypeForControl(controlID) == EventType.MouseDrag;
@@ -226,7 +237,7 @@ class SplineRenderer : Editor
         //- something about the transformations is jacked up
 
         // Get mouse position on screen
-        Vector2 mouseInScreenXY = Event.current.mousePosition;
+        Vector2 mouseInScreenXY = curEvent.mousePosition;
         mouseInScreenXY.y = SceneView.lastActiveSceneView.camera.pixelHeight - mouseInScreenXY.y;
         Vector3 mouseInScreen = new Vector3(mouseInScreenXY.x, mouseInScreenXY.y, 0f);
         Ray mouseRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(mouseInScreen);
@@ -261,7 +272,7 @@ class SplineRenderer : Editor
         //- something about the transformations is jacked up
 
         // Get mouse position on screen
-        Vector2 mouseInScreenXY = Event.current.mousePosition;
+        Vector2 mouseInScreenXY = curEvent.mousePosition;
         mouseInScreenXY.y = SceneView.lastActiveSceneView.camera.pixelHeight - mouseInScreenXY.y;
         Vector3 mouseInScreen = new Vector3(mouseInScreenXY.x, mouseInScreenXY.y, 0f);
         Ray mouseRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(mouseInScreen);
@@ -301,7 +312,7 @@ class SplineRenderer : Editor
         bool mouseInRange = false;
         float minMouseDistance = -1f;
         //Get mouse position
-        Vector2 mousePosition = Event.current.mousePosition;
+        Vector2 mousePosition = curEvent.mousePosition;
         //Stupid scene view coordinate adjustment for mouse position
         mousePosition.y = SceneView.lastActiveSceneView.camera.pixelHeight - mousePosition.y;
         //Get spline positions in world space
@@ -346,7 +357,7 @@ class SplineRenderer : Editor
         nearestIndex = -1;
         float minMouseDistance = -1f;
         //Get mouse position
-        Vector2 mousePosition = Event.current.mousePosition;
+        Vector2 mousePosition = curEvent.mousePosition;
         //Stupid scene view coordinate adjustment for mouse position
         mousePosition.y = SceneView.lastActiveSceneView.camera.pixelHeight - mousePosition.y;
         //Get points
@@ -412,7 +423,7 @@ class SplineRenderer : Editor
             Handles.DrawLine(p2, p3);
 
             Color bezierColor;
-            bezierColor = (ii/3) == highlightedCurve ? specialCurveColor : Color.white;
+            bezierColor = (ii/3) == highlightedCurve ? Color.red : Color.white;
 
             Handles.DrawBezier(p0, p3, p1, p2, bezierColor, null, 2f);
             p0 = p3;

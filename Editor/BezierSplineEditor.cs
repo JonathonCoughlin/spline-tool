@@ -16,7 +16,6 @@ using System.Collections.Generic;
 //  -Start contributing to EVERYONE'S repos!!!!!
 
 [CustomEditor(typeof(BezierSpline))]
-[System.Serializable]
 public class BezierSplineEditor : Editor
 {
 
@@ -94,7 +93,7 @@ public class BezierSplineEditor : Editor
 
     private void DrawSelectedPointInspector()
     {
-        GUILayout.Label("Selected Point");
+        GUILayout.Label("Selected Point: " + selectedIndex.ToString());
         EditorGUI.BeginChangeCheck();
         Vector3 point = EditorGUILayout.Vector3Field("Position", mySpline.GetControlPoint(selectedIndex));
         if (EditorGUI.EndChangeCheck())

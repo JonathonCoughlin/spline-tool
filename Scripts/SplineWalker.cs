@@ -5,7 +5,8 @@ using System.Collections.Generic;
 
 
 public enum WalkerSpeedType { PercentPerSecond, TimeInterval };
-public enum WalkerRotationType { Angle, Velocity, Target };
+public enum WalkerRotationType { Angle, Velocity, Target, None };
+public enum RotationAxis { X, Y, Z };
 
 [Serializable]
 public class WalkerSplinePoint
@@ -36,6 +37,7 @@ public class SplineWalker : MonoBehaviour {
 
     public BezierSpline m_Spline;
 
+    [SerializeField]
     public int m_size { get; private set; }
 
     //Walking states
@@ -62,7 +64,8 @@ public class SplineWalker : MonoBehaviour {
 
     //CustomRotation
     public WalkerRotationType m_rotationType;
-    public float m_yAngleOffset = 0f;
+    public RotationAxis m_rotationAxis;
+    public float m_angleOffset = 0f;
     public GameObject m_lookTarget;
 
     //Duplication
@@ -81,8 +84,9 @@ public class SplineWalker : MonoBehaviour {
         m_speedType = parameters.m_speedType;
         m_walkSpeed = parameters.m_walkSpeed;
         m_rotationType = parameters.m_rotationType;
+        m_rotationAxis = parameters.m_rotationAxis;
         m_lookTarget = parameters.m_lookTarget;
-        m_yAngleOffset = parameters.m_offsetAngle;
+        m_angleOffset = parameters.m_offsetAngle;
         m_autoWalk = parameters.m_autoWalk;
         m_autoReset = parameters.m_autoReset;
         m_destroyAtEnd = parameters.m_destroyAtEnd;
@@ -100,6 +104,11 @@ public class SplineWalker : MonoBehaviour {
         {
             m_WalkerSplinePoints.Add(new WalkerSplinePoint());
         }
+    }
+
+    public void ResizeToSpline()
+    {
+        m_WalkerSplinePoints.Resize(m_Spline.CurveCount);
     }
 
     public void DuplicatePoint(int originalPoint, int pointToAdjust)
@@ -307,31 +316,80 @@ public class SplineWalker : MonoBehaviour {
         ManageWalkerAngle(0);
     }
 
+    private Vector3 CalculateNewEulerAngles()
+    {
+        //get current euler angles
+        Vector3 oldEuler = this.transform.rotation.eulerAngles;
+        Vector3 newEuler = oldEuler;
+
+        //Get Velocity
+        Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
+
+        //Calculate Rotation
+        switch (m_rotationAxis)
+        {
+            case RotationAxis.X:
+                {
+                    float newXangle = -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.y, splineVelocity.z);
+                    //combine angles
+                    newEuler.x = newXangle;
+
+                    break;
+                }
+            case RotationAxis.Y:
+                {
+                    float newYangle = -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
+                    //combine angles
+                    newEuler.y = newYangle;
+
+                    break;
+                }
+            case RotationAxis.Z:
+                {
+                    float newZangle = -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.y, splineVelocity.x);
+                    //combine angles
+                    newEuler.z = newZangle;
+
+                    break;
+                }
+
+        }
+
+        return newEuler;
+    }
+
     private void ManageWalkerAngle(int currentCurveIndex)
     {
         switch (m_rotationType)
         {
             case WalkerRotationType.Velocity:
                 {
-                    //get current euler angles
-                    Vector3 oldEuler = this.transform.rotation.eulerAngles;
-                    //calculate y rotation
-                    Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
-                    float newYangle = -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
-                    //combine angles
-                    Vector3 newEuler = new Vector3(oldEuler.x, newYangle, oldEuler.z);
-                    this.transform.eulerAngles = newEuler;
+                    this.transform.eulerAngles = CalculateNewEulerAngles();
                     break;
                 }
             case WalkerRotationType.Angle:
                 {
-                    //get current euler angles
-                    Vector3 oldEuler = this.transform.rotation.eulerAngles;
-                    //calculate y rotation
-                    Vector3 splineVelocity = m_Spline.GetVelocity(m_splinePos, true);
-                    float newYangle = m_yAngleOffset + -Mathf.Rad2Deg * Mathf.Atan2(splineVelocity.z, splineVelocity.x);
-                    //combine angles
-                    Vector3 newEuler = new Vector3(oldEuler.x, newYangle, oldEuler.z);
+                    Vector3 newEuler = CalculateNewEulerAngles();
+
+                    switch (m_rotationAxis)
+                    {
+                        case RotationAxis.X:
+                            {
+                                newEuler.x += m_angleOffset;
+                                break;
+                            }
+                        case RotationAxis.Y:
+                            {
+                                newEuler.y += m_angleOffset;
+                                break;
+                            }
+                        case RotationAxis.Z:
+                            {
+                                newEuler.z += m_angleOffset;
+                                break;
+                            }
+                    }
+                    
                     this.transform.eulerAngles = newEuler;
                     break;
                 }
@@ -342,11 +400,7 @@ public class SplineWalker : MonoBehaviour {
                         if (m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget)
                         {
                             transform.LookAt(m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.transform);
-                            //Debug.Log("CurveIndex: " + currentCurveIndex);
-                            //Debug.Log("Spline Pct: " + m_splinePos);
-                            //Debug.Log("PctPerSec: " + m_WalkerSplinePoints[currentCurveIndex].m_speedPerSegment);
-                            //Debug.Log("New Tgt: " + m_WalkerSplinePoints[currentCurveIndex].m_newRotationTarget);
-                            //Debug.Log("TargetName:" + m_WalkerSplinePoints[currentCurveIndex].m_rotationTarget.name);
+                            
                         }
                     } else
                     {
