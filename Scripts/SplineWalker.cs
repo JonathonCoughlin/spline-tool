@@ -16,6 +16,7 @@ public class WalkerSplinePoint
     public GameObject m_rotationTarget; 
     public float m_pauseTimeReq;
     public bool m_pauseAtCurve;
+    
 
     public WalkerSplinePoint(float spd, bool newTgt, GameObject tgt, bool pause, float pauseTime)
     {
@@ -44,6 +45,8 @@ public class SplineWalker : MonoBehaviour {
     public bool m_walking { get; private set; }
     private bool m_paused = false;
     private float m_splinePos;
+    [Range(0f, 1f)]
+    public float m_initialSplinePos;
 
     //Walking Parameters
     public bool m_autoWalk = false;
@@ -73,8 +76,7 @@ public class SplineWalker : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        ResetSpline();
-        
+        ReadySpline();
 	}
 
     public void SetSpline(BezierSpline spline, SimpleSplineParameters parameters)
@@ -151,12 +153,6 @@ public class SplineWalker : MonoBehaviour {
         
 	}
 
-    void Update()
-    {
-        
-    }
-
-
     private void ManageWalk(float timestep)
     {
         // check if on new curve
@@ -210,7 +206,6 @@ public class SplineWalker : MonoBehaviour {
         m_scheduledPauseLimit = 0f;
     }
 
-
     //Hard Pause
     private void ManagePause()
     {
@@ -227,6 +222,13 @@ public class SplineWalker : MonoBehaviour {
         m_walking = false;
         m_paused = false;
         m_splinePos = 0f;
+    }
+
+    private void ReadySpline()
+    {
+        m_walking = false;
+        m_paused = false;
+        m_splinePos = m_initialSplinePos;
     }
 
     public void StartWalking()
@@ -314,6 +316,32 @@ public class SplineWalker : MonoBehaviour {
             }
         }
         ManageWalkerAngle(0);
+    }
+
+    public void SetPosToInitial()
+    {
+        m_splinePos = m_initialSplinePos;
+        this.transform.position = m_Spline.GetPoint(m_splinePos, true);
+        int currentCurve = m_Spline.CurveIDatPercentage(m_splinePos);
+        if (m_rotationType == WalkerRotationType.Target)
+        {
+            if (m_variableSpeed)
+            {
+                if (m_WalkerSplinePoints[currentCurve].m_rotationTarget != null)
+                {
+                    ManageWalkerAngle(currentCurve);
+                }
+            } else
+            {
+                if (m_lookTarget != null)
+                {
+                    ManageWalkerAngle(currentCurve);
+                }
+            }
+        } else
+        {
+            ManageWalkerAngle(currentCurve);
+        }        
     }
 
     private Vector3 CalculateNewEulerAngles()

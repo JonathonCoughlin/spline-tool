@@ -108,6 +108,11 @@ public class SplineWalkerEditor : Editor {
 
             EditorGUILayout.EndHorizontal();
 
+            //InitialPosition
+            EditorGUILayout.LabelField("Initial Spline Position");
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_initialSplinePos"), GUIContent.none);
+            m_Walker.SetPosToInitial();
+
             //Auto functionality
             EditorGUILayout.BeginHorizontal();
 
