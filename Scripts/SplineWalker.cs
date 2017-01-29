@@ -49,6 +49,7 @@ public class SplineWalker : MonoBehaviour {
     public float m_initialSplinePos;
 
     //Walking Parameters
+    public bool m_startWithSpace = false;
     public bool m_autoWalk = false;
     public bool m_autoReset = false;
     public bool m_destroyAtEnd;
@@ -78,6 +79,11 @@ public class SplineWalker : MonoBehaviour {
     void Start () {
         ReadySpline();
 	}
+
+    public float SplinePos()
+    {
+        return m_splinePos;
+    }
 
     public void SetSpline(BezierSpline spline, SimpleSplineParameters parameters)
     {
@@ -132,6 +138,11 @@ public class SplineWalker : MonoBehaviour {
         }
     }
 
+    public int CurrentCurve()
+    {
+        int currentCurve = m_Spline.CurveIDatPercentage(m_splinePos);
+        return currentCurve;
+    }
 
     // Update is called once per frame
     void FixedUpdate () {
@@ -139,7 +150,7 @@ public class SplineWalker : MonoBehaviour {
         
         if (!m_walking)
         {
-            if (Input.GetKey(KeyCode.Space) || m_autoWalk) { StartWalking(); }
+            if (m_startWithSpace && (Input.GetKey(KeyCode.Space)) || m_autoWalk) { StartWalking(); }
         }
         else if (!m_paused)
         {
