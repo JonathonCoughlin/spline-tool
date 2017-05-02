@@ -43,7 +43,7 @@ public class SplineWalker : MonoBehaviour {
 
     //Walking states
     public bool m_walking { get; private set; }
-    private bool m_paused = false;
+    public bool m_paused { get; private set; }
     private float m_splinePos;
     [Range(0f, 1f)]
     public float m_initialSplinePos;
@@ -220,12 +220,12 @@ public class SplineWalker : MonoBehaviour {
     //Hard Pause
     private void ManagePause()
     {
-        if (Input.GetKeyDown(KeyCode.Space)) { PauseWalking(); }
+        //if (Input.GetKeyDown(KeyCode.Space)) { PauseWalking(); }
     }
 
     private void ManageReset()
     {
-        if (Input.GetKeyDown(KeyCode.R)) { ResetSpline(); }
+        //if (Input.GetKeyDown(KeyCode.R)) { ResetSpline(); }
     }
 
     private void ResetSpline()
@@ -249,7 +249,12 @@ public class SplineWalker : MonoBehaviour {
 
     public void PauseWalking()
     {
-        m_paused = !m_paused;
+        m_paused = true;
+    }
+
+    public void ResumeWalking()
+    {
+        m_paused = false;
     }
 
     private void WalkSplineAtVariableSpeed(float deltaTime)
